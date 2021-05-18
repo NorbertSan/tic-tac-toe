@@ -8,6 +8,7 @@ import com.example.tictactoe.storage.GameStorage;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.UUID;
 
 @Service
@@ -39,5 +40,18 @@ public class GameService {
         game.setStatus(GameStatus.IN_PROGRESS);
         GameStorage.getInstance().setGame(game);
         return game;
+    }
+
+    public Game connectToRandomGame(Player player2) throws GameException{
+      Game game  = GameStorage.getInstance().getGames()
+              .values()
+              .stream()
+              .filter(item -> item.getStatus().equals(GameStatus.NEW))
+              .findFirst().orElseThrow(() -> new GameException("No waiting games found"));
+
+      game.setPlayer2(player2);
+      game.setStatus(GameStatus.IN_PROGRESS);
+      GameStorage.getInstance().setGame(game);
+      return game;
     }
 }

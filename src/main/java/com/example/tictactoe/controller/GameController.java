@@ -31,4 +31,10 @@ public class GameController {
         Game game = gameService.connectToGame(player2,id);
         return ResponseEntity.ok(game);
     }
+
+    @PostMapping("/connect")
+    public ResponseEntity<Game> connectToRandomGame(@RequestBody Player player2) throws GameException {
+        Game game = gameService.connectToRandomGame(player2);
+        return ResponseEntity.ok(game);
+    }
 }

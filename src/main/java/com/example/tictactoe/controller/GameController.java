@@ -2,7 +2,9 @@ package com.example.tictactoe.controller;
 
 import com.example.tictactoe.exception.GameException;
 import com.example.tictactoe.model.Game;
+import com.example.tictactoe.model.Move;
 import com.example.tictactoe.model.Player;
+import com.example.tictactoe.model.Sign;
 import com.example.tictactoe.service.GameService;
 import com.example.tictactoe.storage.GameStorage;
 import lombok.AllArgsConstructor;
@@ -36,5 +38,11 @@ public class GameController {
     public ResponseEntity<Game> connectToRandomGame(@RequestBody Player player2) throws GameException {
         Game game = gameService.connectToRandomGame(player2);
         return ResponseEntity.ok(game);
+    }
+
+    @PostMapping("/:id/move")
+    public ResponseEntity<Game> makeMove(@RequestBody Move move) throws GameException {
+        Game game = gameService.playGame(move);
+        return ResponseEntity. ok(game);
     }
 }

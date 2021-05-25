@@ -61,6 +61,8 @@ public class GameService {
         game.setBoard(board);
 
         checkWinner(game.getBoard(),move.getSign());
+
+        GameStorage.getInstance().setGame(game);
         return game;
     }
 

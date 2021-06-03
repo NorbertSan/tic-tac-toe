@@ -10,6 +10,7 @@ import com.example.tictactoe.storage.GameStorage;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -21,6 +22,8 @@ import java.util.Map;
 public class GameController {
 
     private final GameService gameService;
+    private final SimpMessagingTemplate simpMessagingTemplate;
+
 
     @PostMapping("")
     public ResponseEntity<Game> create(@RequestBody Player player){
@@ -28,7 +31,13 @@ public class GameController {
         return ResponseEntity.ok(game);
     }
 
-    @PostMapping("/:id/connect")
+    @GetMapping("/{id}")
+    public ResponseEntity<Game> getGame( @PathVariable String id) throws GameException {
+        Game game = gameService.getGame(id);
+        return ResponseEntity.ok(game);
+    }
+
+    @PostMapping("/{id}/connect")
     public ResponseEntity<Game> connectToGame(@RequestBody Player player2, @PathVariable String id) throws GameException {
         Game game = gameService.connectToGame(player2,id);
         return ResponseEntity.ok(game);
@@ -40,9 +49,10 @@ public class GameController {
         return ResponseEntity.ok(game);
     }
 
-    @PostMapping("/:id/move")
-    public ResponseEntity<Game> makeMove(@RequestBody Move move) throws GameException {
-        Game game = gameService.playGame(move);
+    @PostMapping("/{id}/move")
+    public ResponseEntity<Game> makeMove(@RequestBody Move move,@PathVariable String id) throws GameException {
+        Game game = gameService.playGame(move,id);
+        simpMessagingTemplate.convertAndSend("/topic/game-progress" + game.getGameId(),game);
         return ResponseEntity. ok(game);
     }
 }

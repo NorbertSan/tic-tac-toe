@@ -10,5 +10,5 @@ public class Move {
     private Sign sign;
     private Integer positionX;
     private Integer positionY;
-    private String gameId;
+    private Player player;
 }

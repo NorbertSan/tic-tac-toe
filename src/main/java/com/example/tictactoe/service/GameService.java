@@ -49,8 +49,8 @@ public class GameService {
       return game;
     }
 
-    public Game playGame(Move move) throws GameException{
-        Game game = getGame(move.getGameId());
+    public Game playGame(Move move,String gameId) throws GameException{
+        Game game = getGame(gameId);
 
         if(game.getStatus().equals(GameStatus.FINISHED)){
             throw new GameException("Game is already finished");
@@ -60,7 +60,11 @@ public class GameService {
         board[move.getPositionX()][move.getPositionY()] = move.getSign().getValue();
         game.setBoard(board);
 
-        checkWinner(game.getBoard(),move.getSign());
+
+        if(checkWinner(game.getBoard(),move.getSign())){
+            game.setStatus(GameStatus.FINISHED);
+            game.setWinner(move.getPlayer());
+        }
 
         GameStorage.getInstance().setGame(game);
         return game;
@@ -70,7 +74,7 @@ public class GameService {
         int [] oneDimensionArr = new int[9];
         for(int i=0;i<board.length;i++){
             for(int j=0;j<board[i].length;j++){
-                oneDimensionArr[i*j] = board[i][j];
+                oneDimensionArr[i*board.length + j] = board[i][j];
             }
         }
 
@@ -99,7 +103,7 @@ public class GameService {
         return hasPlayerWon;
     }
 
-    private Game getGame(String gameId) throws GameException{
+     public Game getGame(String gameId) throws GameException{
         if(!GameStorage.getInstance ().getGames().containsKey(gameId)){
             String gameNotFoundMessage = "Game with id " + gameId + "not found";
             throw new GameException(gameNotFoundMessage);

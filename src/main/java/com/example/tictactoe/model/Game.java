@@ -6,7 +6,7 @@ import org.bson.types.ObjectId;
 
 @Getter
 @Setter
-public class GameMongo {
+public class Game {
     private ObjectId _id;
     private String gameId ;
     private String player1;
@@ -15,7 +15,7 @@ public class GameMongo {
     private int[][] board;
     private String winner;
 
-    public GameMongo(ObjectId id,String gameId,String player1,String player2,GameStatus status,int [][] board, String winner) {
+    public Game(ObjectId id, String gameId, String player1, String player2, GameStatus status, int [][] board, String winner) {
         this._id = id;
         this.gameId = gameId;
         this.player1 = player1;

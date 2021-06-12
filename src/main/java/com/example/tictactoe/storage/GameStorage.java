@@ -1,11 +1,12 @@
 package com.example.tictactoe.storage;
 
-import com.example.tictactoe.exception.GameException;
-import com.example.tictactoe.model.GameMongo;
+import com.example.tictactoe.model.Game;
 import com.google.gson.Gson;
 import com.mongodb.*;
 import com.mongodb.client.*;
 import org.bson.Document;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 
@@ -26,26 +27,29 @@ public class GameStorage {
         return instance;
     }
 
-    public GameMongo getGame(String gameId) throws GameException {
+    public Game getGame(String gameId)  {
         MongoCollection<Document> gamesCollection = this.getMongoDbGameCollection();
         Document doc = gamesCollection.find(eq("gameId",gameId)).first();
 
         if(doc == null){
-            String gameNotFoundMessage = "Game with id " + gameId + "not found";
-            throw new GameException(gameNotFoundMessage);
+            String gameNotFoundMessage = "Game with id " + gameId + " not found";
+            System.out.println(gameNotFoundMessage);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, gameNotFoundMessage);
         }
-        GameMongo game = this.mapGameDocumentToObject(doc);
+
+        mongoClient.close();
+        Game game = this.mapGameDocumentToObject(doc);
         return game;
     }
 
-    public ArrayList<GameMongo> getGamesMongo(){
+    public ArrayList<Game> getGames(){
         MongoCollection<Document> gamesCollection = this.getMongoDbGameCollection();
-        ArrayList<GameMongo> gamesList = new ArrayList<>();
+        ArrayList<Game> gamesList = new ArrayList<>();
 
         try (MongoCursor<Document> cursor = gamesCollection.find().iterator()) {
             while (cursor.hasNext()) {
                 Document doc = cursor.next();
-                GameMongo game = this.mapGameDocumentToObject(doc);
+                Game game = this.mapGameDocumentToObject(doc);
                 gamesList.add(game);
             }
         }
@@ -55,7 +59,7 @@ public class GameStorage {
     }
 
 
-    public void createGame(GameMongo game){
+    public void createGame(Game game){
         Document gameDocument = this.mapGameObjectToDocument(game);
         MongoCollection<Document> gamesCollection = this.getMongoDbGameCollection();
         gamesCollection.insertOne(gameDocument);
@@ -64,10 +68,12 @@ public class GameStorage {
     }
 
 
-    public void patchGame(GameMongo game){
+    public void patchGame(Game game){
         MongoCollection<Document> gamesCollection = this.getMongoDbGameCollection();
         Document gameDoc = this.mapGameObjectToDocument(game);
         gamesCollection.replaceOne(eq("gameId",game.getGameId()), gameDoc);
+
+        mongoClient.close();
     }
 
     private MongoCollection<Document> getMongoDbGameCollection() {
@@ -84,13 +90,13 @@ public class GameStorage {
      return  database.getCollection("game");
     }
 
-    private GameMongo mapGameDocumentToObject(Document gameDocument){
+    private Game mapGameDocumentToObject(Document gameDocument){
         Gson gson = new Gson();
-        GameMongo model = gson.fromJson(gameDocument.toJson(), GameMongo.class);
+        Game model = gson.fromJson(gameDocument.toJson(), Game.class);
         return model;
     }
 
-    private Document mapGameObjectToDocument(GameMongo game){
+    private Document mapGameObjectToDocument(Game game){
         BasicDBObject dbGameObject  = new BasicDBObject("gameId",game.getGameId())
                 .append("player1",game.getPlayer1())
                 .append("player2",game.getPlayer2())

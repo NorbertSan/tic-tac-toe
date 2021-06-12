@@ -1,11 +1,13 @@
 package com.example.tictactoe.service;
 
-import com.example.tictactoe.exception.GameException;
 import com.example.tictactoe.model.*;
 import com.example.tictactoe.storage.GameStorage;
 import lombok.AllArgsConstructor;
 import org.bson.types.ObjectId;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -13,17 +15,18 @@ import java.util.UUID;
 @AllArgsConstructor
 public class GameService {
 
-    public GameMongo createGame(String player1){
-        GameMongo game = new GameMongo(new ObjectId(),UUID.randomUUID().toString(),player1,null,GameStatus.NEW,new int[3][3],null);
+    public Game createGame(String player1){
+        Game game = new Game(new ObjectId(),UUID.randomUUID().toString(),player1,null,GameStatus.NEW,new int[3][3],null);
         GameStorage.getInstance().createGame(game);
         return game;
     }
 
-    public GameMongo connectToGame(String player2,String gameId) throws GameException {
-        GameMongo game = this.getGameMongo(gameId);
+    public Game connectToGame(String player2, String gameId)  {
+        Game game = this.getGame(gameId);
         if(game.getPlayer2() != null){
             String noFreeSlotsMessage = "Game with id " + gameId + "has no free slots to play";
-            throw new GameException(noFreeSlotsMessage);
+            System.out.println(noFreeSlotsMessage);
+            throw new ResponseStatusException(HttpStatus.IM_USED, "NO_FREE_SLOTS");
         }
         game.setPlayer2(player2);
         game.setStatus(GameStatus.IN_PROGRESS);
@@ -32,16 +35,20 @@ public class GameService {
         return game;
     }
 
-    public GameMongo connectToRandomGame(String player2) throws GameException{
-        ArrayList<GameMongo> games = GameStorage.getInstance().getGamesMongo();
-        GameMongo game = games.stream()
+    public Game connectToRandomGame(String player2) {
+        ArrayList<Game> games = GameStorage.getInstance().getGames();
+        Game game = games.stream()
                 .filter(item -> {
                     GameStatus status = item.getStatus();
                     if(status == null) return false;
                     return status.equals(GameStatus.NEW);
                 })
                 .findFirst()
-                .orElseThrow(() -> new GameException("No waiting games found"));
+                .orElseThrow(() -> {
+                    String noOpenedGamesMessage = "No waiting games found";
+                    System.out.println(noOpenedGamesMessage);
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, noOpenedGamesMessage);
+                });
 
       game.setPlayer2(player2);
       game.setStatus(GameStatus.IN_PROGRESS);
@@ -50,11 +57,13 @@ public class GameService {
       return game;
     }
 
-    public GameMongo playGame(Move move,String gameId) throws GameException{
-        GameMongo game = this.getGameMongo(gameId);
+    public Game playGame(Move move, String gameId) {
+        Game game = this.getGame(gameId);
 
         if(game.getStatus().equals(GameStatus.FINISHED)){
-            throw new GameException("Game is already finished");
+            String gameFinishedMessage = "Game is already finished";
+            System.out.println(gameFinishedMessage);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "GAME_FINISHED");
         }
 
         int[][] board = game.getBoard();
@@ -104,12 +113,12 @@ public class GameService {
         return hasPlayerWon;
     }
 
-    public GameMongo getGameMongo(String gameId) throws GameException{
-        GameMongo game = GameStorage.getInstance().getGame(gameId);
+    public Game getGame(String gameId) {
+        Game game = GameStorage.getInstance().getGame(gameId);
         return game;
     }
 
-    public ArrayList<GameMongo> getGames(){
-        return GameStorage.getInstance().getGamesMongo();
+    public ArrayList<Game> getGames(){
+        return GameStorage.getInstance().getGames();
     }
 }

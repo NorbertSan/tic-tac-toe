@@ -4,53 +4,54 @@ import com.example.tictactoe.exception.GameException;
 import com.example.tictactoe.model.*;
 import com.example.tictactoe.storage.GameStorage;
 import lombok.AllArgsConstructor;
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Service;
-
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.UUID;
 
 @Service
 @AllArgsConstructor
 public class GameService {
 
-    public Game createGame(Player player){
-        Game game = new Game();
-        game.setBoard(new int[3][3]);
-        game.setGameId(UUID.randomUUID().toString());
-        game.setPlayer1(player);
-        game.setStatus(GameStatus.NEW);
-
-        GameStorage.getInstance().setGame(game);
+    public GameMongo createGame(String player1){
+        GameMongo game = new GameMongo(new ObjectId(),UUID.randomUUID().toString(),player1,null,GameStatus.NEW,new int[3][3],null);
+        GameStorage.getInstance().createGame(game);
         return game;
     }
 
-    public Game connectToGame(Player player2,String gameId) throws GameException {
-        Game game = getGame(gameId);
+    public GameMongo connectToGame(String player2,String gameId) throws GameException {
+        GameMongo game = this.getGameMongo(gameId);
         if(game.getPlayer2() != null){
-            String noFreeSlotsMessage = "Game with id " + gameId + "has to free slots to play";
+            String noFreeSlotsMessage = "Game with id " + gameId + "has no free slots to play";
             throw new GameException(noFreeSlotsMessage);
         }
         game.setPlayer2(player2);
         game.setStatus(GameStatus.IN_PROGRESS);
-        GameStorage.getInstance().setGame(game);
+        GameStorage.getInstance().patchGame(game);
+
         return game;
     }
 
-    public Game connectToRandomGame(Player player2) throws GameException{
-      Game game = GameStorage.getInstance().getGames()
-              .values()
-              .stream()
-              .filter(item -> item.getStatus().equals(GameStatus.NEW))
-              .findFirst().orElseThrow(() -> new GameException("No waiting games found"));
+    public GameMongo connectToRandomGame(String player2) throws GameException{
+        ArrayList<GameMongo> games = GameStorage.getInstance().getGamesMongo();
+        GameMongo game = games.stream()
+                .filter(item -> {
+                    GameStatus status = item.getStatus();
+                    if(status == null) return false;
+                    return status.equals(GameStatus.NEW);
+                })
+                .findFirst()
+                .orElseThrow(() -> new GameException("No waiting games found"));
 
       game.setPlayer2(player2);
       game.setStatus(GameStatus.IN_PROGRESS);
-      GameStorage.getInstance().setGame(game);
+
+      GameStorage.getInstance().patchGame(game);
       return game;
     }
 
-    public Game playGame(Move move,String gameId) throws GameException{
-        Game game = getGame(gameId);
+    public GameMongo playGame(Move move,String gameId) throws GameException{
+        GameMongo game = this.getGameMongo(gameId);
 
         if(game.getStatus().equals(GameStatus.FINISHED)){
             throw new GameException("Game is already finished");
@@ -65,8 +66,8 @@ public class GameService {
             game.setStatus(GameStatus.FINISHED);
             game.setWinner(move.getPlayer());
         }
+        GameStorage.getInstance().patchGame(game);
 
-        GameStorage.getInstance().setGame(game);
         return game;
     }
 
@@ -103,13 +104,12 @@ public class GameService {
         return hasPlayerWon;
     }
 
-     public Game getGame(String gameId) throws GameException{
-        if(!GameStorage.getInstance ().getGames().containsKey(gameId)){
-            String gameNotFoundMessage = "Game with id " + gameId + "not found";
-            throw new GameException(gameNotFoundMessage);
-        };
-        Game game = GameStorage.getInstance().getGames().get(gameId);
-
+    public GameMongo getGameMongo(String gameId) throws GameException{
+        GameMongo game = GameStorage.getInstance().getGame(gameId);
         return game;
+    }
+
+    public ArrayList<GameMongo> getGames(){
+        return GameStorage.getInstance().getGamesMongo();
     }
 }

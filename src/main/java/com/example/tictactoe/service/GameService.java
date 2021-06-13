@@ -36,13 +36,8 @@ public class GameService {
     }
 
     public Game connectToRandomGame(String player2) {
-        ArrayList<Game> games = GameStorage.getInstance().getGames();
+        ArrayList<Game> games = GameStorage.getInstance().getGames(GameStatus.NEW);
         Game game = games.stream()
-                .filter(item -> {
-                    GameStatus status = item.getStatus();
-                    if(status == null) return false;
-                    return status.equals(GameStatus.NEW);
-                })
                 .findFirst()
                 .orElseThrow(() -> {
                     String noOpenedGamesMessage = "No waiting games found";
@@ -118,7 +113,7 @@ public class GameService {
         return game;
     }
 
-    public ArrayList<Game> getGames(){
-        return GameStorage.getInstance().getGames();
+    public ArrayList<Game> getGames(GameStatus status){
+        return GameStorage.getInstance().getGames(status);
     }
 }

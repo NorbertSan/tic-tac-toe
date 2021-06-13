@@ -1,6 +1,7 @@
 package com.example.tictactoe.storage;
 
 import com.example.tictactoe.model.Game;
+import com.example.tictactoe.model.GameStatus;
 import com.google.gson.Gson;
 import com.mongodb.*;
 import com.mongodb.client.*;
@@ -42,11 +43,11 @@ public class GameStorage {
         return game;
     }
 
-    public ArrayList<Game> getGames(){
+    public ArrayList<Game> getGames(GameStatus status){
         MongoCollection<Document> gamesCollection = this.getMongoDbGameCollection();
         ArrayList<Game> gamesList = new ArrayList<>();
 
-        try (MongoCursor<Document> cursor = gamesCollection.find().iterator()) {
+        try (MongoCursor<Document> cursor = gamesCollection.find(eq("status",status.toString())).iterator()) {
             while (cursor.hasNext()) {
                 Document doc = cursor.next();
                 Game game = this.mapGameDocumentToObject(doc);

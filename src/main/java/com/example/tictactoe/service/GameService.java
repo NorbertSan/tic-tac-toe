@@ -21,15 +21,29 @@ public class GameService {
         return game;
     }
 
-    public Game connectToGame(String player2, String gameId)  {
+    public Game connectToGame(String player, String gameId)  {
         Game game = this.getGame(gameId);
+
+        if(game.getPlayer1().equals(player)){
+            return game;
+        }
+
         if(game.getPlayer2() != null){
+            if(game.getPlayer2().equals(player)){
+                return game;
+            }
+        }
+
+        if(game.getPlayer1() != null && game.getPlayer2() != null){
             String noFreeSlotsMessage = "Game with id " + gameId + "has no free slots to play";
             System.out.println(noFreeSlotsMessage);
-            throw new ResponseStatusException(HttpStatus.IM_USED, "NO_FREE_SLOTS");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "NO_FREE_SLOTS");
         }
-        game.setPlayer2(player2);
-        game.setStatus(GameStatus.IN_PROGRESS);
+
+        game.setPlayer2(player);
+        if(game.getPlayer1() != null && game.getPlayer2() != null){
+            game.setStatus(GameStatus.IN_PROGRESS);
+        }
         GameStorage.getInstance().patchGame(game);
 
         return game;
@@ -62,17 +76,34 @@ public class GameService {
         }
 
         int[][] board = game.getBoard();
-        board[move.getPositionX()][move.getPositionY()] = move.getSign().getValue();
+        board[move.getPositionY()][move.getPositionX()] = move.getSign().getValue();
         game.setBoard(board);
-
 
         if(checkWinner(game.getBoard(),move.getSign())){
             game.setStatus(GameStatus.FINISHED);
             game.setWinner(move.getPlayer());
         }
+
+        if(checkIfGameEnded(game.getBoard())){
+            game.setStatus(GameStatus.FINISHED);
+        }
+
         GameStorage.getInstance().patchGame(game);
 
         return game;
+    }
+
+    private Boolean checkIfGameEnded(int[][] board){
+        Boolean gameEnded= true;
+        for(int i=0;i<board.length;i++){
+            for(int j=0;j<board[i].length;j++){
+                if(board[i][j] == 0){
+                    gameEnded = false;
+                }
+            }
+        }
+
+        return gameEnded;
     }
 
     private Boolean checkWinner(int[][] board, Sign playerSign){

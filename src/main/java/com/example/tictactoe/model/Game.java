@@ -24,8 +24,4 @@ public class Game {
         this.board = board;
         this.winner = winner;
     }
-
-//    public GameMongo(ObjectId id,String gameId) {
-//        this(id,gameId,null,null,null,null,null);
-//    }
 }

@@ -17,7 +17,7 @@ import java.util.ArrayList;
 @Slf4j
 @AllArgsConstructor
 @RequestMapping("/games")
-@CrossOrigin("*")
+@CrossOrigin(origins = "*")
 public class GameController {
     private final GameService gameService;
     private final SimpMessagingTemplate simpMessagingTemplate;
@@ -38,19 +38,21 @@ public class GameController {
     @GetMapping("/{id}")
     public ResponseEntity<Game> getGame(@PathVariable String id)  {
         Game game = gameService.getGame(id);
+        simpMessagingTemplate.convertAndSend("/topic/game-progress/" + game.getGameId(),game);
         return ResponseEntity.ok(game);
     }
 
     @PostMapping("/connect")
     public ResponseEntity<Game> connectToRandomGame(@RequestBody ConnectRandomGameBody connectRandomGameBody)  {
         Game game = gameService.connectToRandomGame(connectRandomGameBody.getPlayer2());
+        simpMessagingTemplate.convertAndSend("/topic/game-progress/" + game.getGameId(),game);
         return ResponseEntity.ok(game);
     }
 
     @PostMapping("/{id}/connect")
     public ResponseEntity<Game> connectToGame(@RequestBody ConnectGameBody connectGameBody, @PathVariable String id)  {
-        Game game = gameService.connectToGame(connectGameBody.getPlayer2(),id);
-        simpMessagingTemplate.convertAndSend("/topic/game-progress/" + game.getGameId(),"wtf");
+        Game game = gameService.connectToGame(connectGameBody.getPlayer(),id);
+        simpMessagingTemplate.convertAndSend("/topic/game-progress/" + game.getGameId(),game);
         return ResponseEntity.ok(game);
     }
 

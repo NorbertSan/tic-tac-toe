@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class ConnectGameBody {
-    String player2;
+    String player;
 }
